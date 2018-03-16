@@ -75,11 +75,11 @@ def get_batch(image, label, image_W, image_H, batch_size, capacity):
     image_batch, label_batch = tf.train.batch([image, label],
                                               batch_size=batch_size,
                                               num_threads=64,   # threads
-                                              capacity=capacity)
+                                              capacity=CAPACITY)
 
     image_batch = tf.reshape(image_batch, [batch_size, -1])  #
 
-    # label_batch = tf.reshape(label_batch, [batch_size])
+    label_batch = tf.reshape(label_batch, [batch_size, -1])
 
     return image_batch, label_batch
     
@@ -87,13 +87,13 @@ BATCH_SIZE = 5
 CAPACITY = 256
 IMG_W = 208
 IMG_H = 208
-train_dir = "../dataset/train"
+train_dir = "E://ICM/semestre III/PRcode/MR/mini/train"
 image_list, label_list = get_files(train_dir)
 image_train_batch, label_train_batch = get_batch(image_list, label_list, IMG_W, IMG_H, BATCH_SIZE, CAPACITY)
-
+#label_train_batch.shape
 D = image_train_batch.shape[1].value
-K = 1
-
+K = label_train_batch.shape[1].value
+#print(K)
 # Create a placeholder to hold the data (in minibatches) in a TensorFlow graph.
 x = tf.placeholder(tf.float32, [None, D])
 # Normal(0,1) priors for the variables. 
