@@ -77,7 +77,7 @@ def get_batch(image, label, image_W, image_H, batch_size, capacity):
                                               num_threads=64,   # threads
                                               capacity=capacity)
 
-    # image_batch = tf.reshape(image_batch, [None, 2])
+    image_batch = tf.reshape(image_batch, [batch_size, -1])  #
 
     # label_batch = tf.reshape(label_batch, [batch_size])
 
@@ -91,38 +91,25 @@ train_dir = "../dataset/train"
 image_list, label_list = get_files(train_dir)
 image_train_batch, label_train_batch = get_batch(image_list, label_list, IMG_W, IMG_H, BATCH_SIZE, CAPACITY)
 
-
-M = 5  # batch size during training
-D = 4  # data dimension
-K = 2  # number of clusters
-
-
-# MODEL
-w = Normal(loc=tf.zeros([D, K]), scale=tf.ones([D, K]))
-b = Categorical(logits=tf.zeros([M, K]))
-y = Normal(loc=tf.gather(w, b), scale=tf.ones([M, D]))
-
-# INFERENCE
-qw = Normal(loc=tf.Variable(tf.zeros([D, K])),
-               scale=tf.nn.softplus(tf.Variable(tf.zeros([D, K]))))
-qb = Categorical(logits=tf.Variable(tf.zeros([M, D])))
+D = image_train_batch.shape[1].value
+K = 1
 
 # Create a placeholder to hold the data (in minibatches) in a TensorFlow graph.
-#x = tf.placeholder(tf.float32, [M, D])
+x = tf.placeholder(tf.float32, [None, D])
 # Normal(0,1) priors for the variables. 
-#w = Normal(loc=tf.zeros([D, K]), scale=tf.ones([D, K]))
-#b = Normal(loc=tf.zeros(K), scale=tf.ones(K))
+w = Normal(loc=tf.zeros([D, K]), scale=tf.ones([D, K]))
+b = Normal(loc=tf.zeros(K), scale=tf.ones(K))
 # Categorical likelihood for classication.
-#y = Categorical(tf.matmul(x,w)+b)
+y = Categorical(tf.matmul(x,w)+b)
 
 # Contruct the q(w) and q(b). in this case we assume Normal distributions.
-#qw = Normal(loc=tf.Variable(tf.random_normal([K, D])),
- #             scale=tf.nn.softplus(tf.Variable(tf.random_normal([D, K]))))
-#qb = Normal(loc=tf.Variable(tf.random_normal([K])),
-  #            scale=tf.nn.softplus(tf.Variable(tf.random_normal([K]))))
+qw = Normal(loc=tf.Variable(tf.random_normal([D, K])),
+              scale=tf.nn.softplus(tf.Variable(tf.random_normal([D, K]))))
+qb = Normal(loc=tf.Variable(tf.random_normal([K])),
+              scale=tf.nn.softplus(tf.Variable(tf.random_normal([K]))))
 
 # use a placeholder for the labels in anticipation of the traning data.
-y_ph = tf.placeholder(tf.int32, [N])
+y_ph = tf.placeholder(tf.int32, [BATCH_SIZE])
 
 inference = ed.KLqp({w: qw, b: qb}, data={y: y_ph})
 inference.initialize()
