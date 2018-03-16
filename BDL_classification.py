@@ -83,11 +83,11 @@ def get_batch(image, label, image_W, image_H, batch_size, capacity):
 
     return image_batch, label_batch
     
-BATCH_SIZE = 5
+BATCH_SIZE = 2
 CAPACITY = 256
-IMG_W = 208
-IMG_H = 208
-train_dir = "E://ICM/semestre III/PRcode/MR/mini/train"
+IMG_W = 28
+IMG_H = 28 
+train_dir = "E:\\ICM\\semestre III\\PRcode\\MR\\mini\\train"
 image_list, label_list = get_files(train_dir)
 image_train_batch, label_train_batch = get_batch(image_list, label_list, IMG_W, IMG_H, BATCH_SIZE, CAPACITY)
 #label_train_batch.shape
@@ -114,20 +114,20 @@ y_ph = tf.placeholder(tf.int32, [BATCH_SIZE])
 inference = ed.KLqp({w: qw, b: qb}, data={y: y_ph})
 inference.initialize()
 
-#sess = tf.Session()
+sess = tf.Session()
 #sess.run(tf.global_variables_initializer())
 
-with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())
-    coord = tf.train.Coordinator()
-    threads = tf.train.start_queue_runners(coord=coord)
-    for i in range(BATCH_SIZE):
-        batch_x, batch_y = sess.run([image_train_batch, label_train_batch])
-    batch_y = np.argmax(batch_y,axis=1)
-    info_dict = inference.update(feed_dict={x: batch_x, y_ph: batch_y})
-    inference.print_progress(info_dict)
-    
-    coord.request_stop()
-    coord.join(threads)
-    sess.close()
+#with tf.Session() as sess:
+sess.run(tf.global_variables_initializer())
+coord = tf.train.Coordinator()
+threads = tf.train.start_queue_runners(coord=coord)
+for i in range(BATCH_SIZE):
+    batch_x, batch_y = sess.run([image_train_batch, label_train_batch])
+batch_y = np.argmax(batch_y,axis=1)
+info_dict = inference.update(feed_dict={x: batch_x, y_ph: batch_y})
+inference.print_progress(info_dict)
+
+coord.request_stop()
+coord.join(threads)
+sess.close()
 
