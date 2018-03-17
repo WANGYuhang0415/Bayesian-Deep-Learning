@@ -37,8 +37,8 @@ D = train_x.shape[1]  # nombre of features
 K = train_y.shape[1]  #nombre of class
 
 
-EPOCH_NUM = 5   
-batch = 1000  #batch
+EPOCH_NUM = 500   
+batch = 100  #batch
 
 # for bayesian neural network
 train_y2 = np.argmax(train_y, axis=1)
@@ -57,13 +57,41 @@ qb = Normal(loc=tf.Variable(tf.random_normal([K])), scale=tf.Variable(tf.random_
 y = Categorical(tf.matmul(x_, qw) + qb)
 
 inference = ed.KLqp({w: qw, b: qb}, data={y_pre: y_})
-inference.initialize()
+#inference.initialize()
+inference.initialize(n_iter=500, n_print=100, scale={y: float(N) / batch})
+
 
 sess = tf.Session()
 sess.run(tf.global_variables_initializer())
 
+samples_num = 100
+"""loss = []
+acc = []
+
 with sess:
-    samples_num = 100
+    perm = np.random.permutation(N) #disorganize the data
+    for i in range(inference.n_iter): # from 0 to N interval is Batch size
+        batch_x = train_x[perm[i:i+batch]]
+        batch_y = train_y2[perm[i:i+batch]]
+        info_dict = inference.update(feed_dict={x_: batch_x, y_: batch_y})
+        inference.print_progress(info_dict)
+        if i % 100 == 0:
+            y_samples = y.sample(samples_num).eval(feed_dict={x_: train_x})
+            acc = (np.round(y_samples.sum(axis=0) / samples_num) == train_y2).mean()
+            acc.append(acc)
+        
+    plt.figure()
+    plt.plot(loss)
+    plt.xlabel('interation')
+    plt.ylabel('loss value')
+    
+    plt.figure()
+    plt.plot(acc)
+    plt.xlabel('interation')
+    plt.ylabel('acc')
+    plt.show() """
+
+with sess:
     for epoch in tqdm(range(EPOCH_NUM), file=sys.stdout): #print progress
         perm = np.random.permutation(N) #disorganize the data
         for i in range(0, N, batch): #from 0 to N interval is Batch size
@@ -75,6 +103,6 @@ with sess:
         acc = (np.round(y_samples.sum(axis=0) / samples_num) == train_y2).mean()
         y_samples = y.sample(samples_num).eval(feed_dict={x_: test_x})
         test_acc = (np.round(y_samples.sum(axis=0) / samples_num) == test_y2).mean()
-        if (epoch+1) % 1 == 0:
+        if (epoch+1) % 50 == 0:
             tqdm.write('epoch:\t{}\taccuracy:\t{}\tvaridation accuracy:\t{}'.format(epoch+1, acc, test_acc))
 
