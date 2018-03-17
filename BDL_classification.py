@@ -85,8 +85,8 @@ def get_batch(image, label, image_W, image_H, batch_size, capacity):
     
 BATCH_SIZE = 2
 CAPACITY = 256
-IMG_W = 28
-IMG_H = 28 
+IMG_W = 208
+IMG_H = 208 
 train_dir = "E:\\ICM\\semestre III\\PRcode\\MR\\mini\\train"
 image_list, label_list = get_files(train_dir)
 image_train_batch, label_train_batch = get_batch(image_list, label_list, IMG_W, IMG_H, BATCH_SIZE, CAPACITY)
