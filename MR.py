@@ -46,10 +46,15 @@ test_y2 = np.argmax(test_y, axis=1)  #index of max
 
 x_ = tf.placeholder(tf.float32, shape=(None, D))
 y_ = tf.placeholder(tf.int32, shape=(batch))
+keep_prob = tf.placeholder(tf.float32) 
+ 
 # Normal(0,1) priors for the variables. 
 w = Normal(loc=tf.zeros([D, K]), scale=tf.ones([D, K]))
 b = Normal(loc=tf.zeros([K]), scale=tf.ones([K]))
-y_pre = Categorical(tf.matmul(x_, w) + b)
+Wx_plus_b = tf.matmul(x_, w) + b  
+#to dropout
+Wx_plus_b = tf.nn.dropout(Wx_plus_b, keep_prob)  
+y_pre = Categorical(Wx_plus_b)
 
 qw = Normal(loc=tf.Variable(tf.random_normal([D, K])), scale=tf.Variable(tf.random_normal([D, K])))
 qb = Normal(loc=tf.Variable(tf.random_normal([K])), scale=tf.Variable(tf.random_normal([K])))
@@ -97,11 +102,11 @@ with sess:
         for i in range(0, N, batch): #from 0 to N interval is Batch size
             batch_x = train_x[perm[i:i+batch]]
             batch_y = train_y2[perm[i:i+batch]]
-            inference.update(feed_dict={x_: batch_x, y_: batch_y})
+            inference.update(feed_dict={x_: batch_x, y_: batch_y, keep_prob: 0.5})
            # inference.print_progress(info_dict)
-        y_samples = y.sample(samples_num).eval(feed_dict={x_: train_x})
+        y_samples = y.sample(samples_num).eval(feed_dict={x_: train_x, keep_prob: 1})
         acc = (np.round(y_samples.sum(axis=0) / samples_num) == train_y2).mean()
-        y_samples = y.sample(samples_num).eval(feed_dict={x_: test_x})
+        y_samples = y.sample(samples_num).eval(feed_dict={x_: test_x, keep_prob: 1})
         test_acc = (np.round(y_samples.sum(axis=0) / samples_num) == test_y2).mean()
         if (epoch+1) % 50 == 0:
             tqdm.write('epoch:\t{}\taccuracy:\t{}\tvaridation accuracy:\t{}'.format(epoch+1, acc, test_acc))
