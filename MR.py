@@ -37,8 +37,8 @@ D = train_x.shape[1]  # nombre of features
 K = train_y.shape[1]  #nombre of class
 
 
-EPOCH_NUM = 500   
-batch = 100  #batch
+EPOCH_NUM = 100   
+batch = 50  #batch
 
 # for bayesian neural network
 train_y2 = np.argmax(train_y, axis=1)
@@ -69,34 +69,58 @@ inference.initialize(n_iter=500, n_print=100, scale={y: float(N) / batch})
 sess = tf.Session()
 sess.run(tf.global_variables_initializer())
 
-samples_num = 100
-"""loss = []
-acc = []
-
 with sess:
-    perm = np.random.permutation(N) #disorganize the data
-    for i in range(inference.n_iter): # from 0 to N interval is Batch size
-        batch_x = train_x[perm[i:i+batch]]
-        batch_y = train_y2[perm[i:i+batch]]
-        info_dict = inference.update(feed_dict={x_: batch_x, y_: batch_y})
+    # Let the training begin. We load the data in minibatches and update the VI infernce using each new batch.
+    for _ in range(inference.n_iter):
+        perm = np.random.permutation(N) #disorganize the data
+        for i in range(inference.n_iter): # from 0 to N interval is Batch size
+            batch_x = train_x[perm[i:i+batch]]
+            batch_y = train_y2[perm[i:i+batch]]    
+        info_dict = inference.update(feed_dict={x_: batch_x, y_: batch_y, keep_prob: 0.5})
         inference.print_progress(info_dict)
-        if i % 100 == 0:
-            y_samples = y.sample(samples_num).eval(feed_dict={x_: train_x})
-            acc = (np.round(y_samples.sum(axis=0) / samples_num) == train_y2).mean()
-            acc.append(acc)
         
-    plt.figure()
-    plt.plot(loss)
-    plt.xlabel('interation')
-    plt.ylabel('loss value')
     
-    plt.figure()
-    plt.plot(acc)
-    plt.xlabel('interation')
-    plt.ylabel('acc')
-    plt.show() """
+    
+    # Generate samples the posterior and store them.
+    samples_num = 100 
 
-with sess:
+    y_samples = y.sample(samples_num).eval(feed_dict={x_: test_x, keep_prob: 1})
+        
+    accy_test = []
+  
+    for i in range(samples_num):
+        acc = (y_samples[i] == test_y2).mean()*100
+        accy_test.append(acc)
+    #print(accy_test)
+    plt.hist(accy_test)
+    plt.title("Histogram of prediction accuracies in the test data")
+    plt.xlabel("Accuracy")
+    plt.ylabel("Frequency")
+    
+    
+   """ acc = []
+    test_acc = []
+    
+    y_samples = y.sample(samples_num).eval(feed_dict={x_: test_x, keep_prob: 1})
+    print(y_samples)
+    #print(test_y2)
+    for i in range(samples_num):
+        #y_trn_prd = np.argmax(y_samples[i](axis=0)).astype(np.float32)
+        #print(y_trn_prd)
+        #test_acc_temp = (y_trn_prd == test_y2).mean()
+        #test_acc.append(test_acc_temp)
+        print(y_samples[i])
+    
+    for _ in range(samples_num):
+        y_samples = y.sample(samples_num).eval(feed_dict={x_: train_x, keep_prob: 1})
+        acc = (np.round(y_samples.sum(axis=0) / samples_num) == train_y2).mean()
+        acc.append(acc)
+       # y_samples = y.sample(samples_num).eval(feed_dict={x_: test_x, keep_prob: 1})
+       # test_acc = (np.round(y_samples.sum(axis=0) / samples_num) == test_y2).mean()
+       # test_acc.append(test_acc)
+    print(acc)  """
+
+"""with sess:
     for epoch in tqdm(range(EPOCH_NUM), file=sys.stdout): #print progress
         perm = np.random.permutation(N) #disorganize the data
         for i in range(0, N, batch): #from 0 to N interval is Batch size
@@ -108,6 +132,6 @@ with sess:
         acc = (np.round(y_samples.sum(axis=0) / samples_num) == train_y2).mean()
         y_samples = y.sample(samples_num).eval(feed_dict={x_: test_x, keep_prob: 1})
         test_acc = (np.round(y_samples.sum(axis=0) / samples_num) == test_y2).mean()
-        if (epoch+1) % 50 == 0:
-            tqdm.write('epoch:\t{}\taccuracy:\t{}\tvaridation accuracy:\t{}'.format(epoch+1, acc, test_acc))
+        if (epoch+1) % 10 == 0:
+            tqdm.write('epoch:\t{}\taccuracy:\t{}\tvaridation accuracy:\t{}'.format(epoch+1, acc, test_acc))"""
 
