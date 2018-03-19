@@ -7,7 +7,7 @@ Created on Thu Mar 15 20:52:01 2018
 
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
-import sys
+#import sys
 from tqdm import tqdm
 import tensorflow as tf
 import edward as ed
@@ -70,12 +70,31 @@ sess = tf.Session()
 sess.run(tf.global_variables_initializer())
 
 
-samples_num = 100 
-acc = []
-accy_test = []
+with sess:   
+    samples_num = 100 
+    acc = []
+    accy_test = []
+    for epoch in tqdm(range(EPOCH_NUM)):
+        # Let the training begin. We load the data in minibatches and update the VI infernce using each new batch.
+        perm = np.random.permutation(N) #disorganize the data
+        for i in range(inference.n_iter): # from 0 to N interval is Batch size
+            batch_x = train_x[perm[i:i+batch]]
+            batch_y = train_y2[perm[i:i+batch]]    
+        info_dict = inference.update(feed_dict={x_: batch_x, y_: batch_y, keep_prob: 0.5})
+        inference.print_progress(info_dict)
+            
+    y_samples = y.sample(samples_num).eval(feed_dict={x_: test_x, keep_prob: 1})
+    for i in range(samples_num):
+        acc = (y_samples[i] == test_y2).mean()*100
+        accy_test.append(acc)
+            
+    plt.hist(accy_test)
+    plt.title("Histogram of prediction accuracies in the test data")
+    plt.xlabel("Accuracy")
+    plt.ylabel("Frequency")
+    
 
-
-with sess:
+"""with sess:
     for epoch in tqdm(range(EPOCH_NUM)):
         perm = np.random.permutation(N) #disorganize the data
         for i in range(0, N, batch): #from 0 to N interval is Batch size
@@ -84,52 +103,19 @@ with sess:
             inference.update(feed_dict={x_: batch_x, y_: batch_y, keep_prob: 0.5})
            # inference.print_progress(info_dict)
         y_samples = y.sample(samples_num).eval(feed_dict={x_: train_x, keep_prob: 1})
-        temp = (np.round(y_samples.sum(axis=0) / samples_num) == train_y2).mean()
-        acc.append(temp)
+        acc = (np.round(y_samples.sum(axis=0) / samples_num) == train_y2).mean()
+        #acc.append(temp)
         y_samples = y.sample(samples_num).eval(feed_dict={x_: test_x, keep_prob: 1})
         test_acc = (np.round(y_samples.sum(axis=0) / samples_num) == test_y2).mean()
-        accy_test.append(test_acc)
+        #accy_test.append(test_acc)
         
-       # if (epoch+1) % 10 == 0:
-           #tqdm.write('epoch:\t{}\taccuracy:\t{}\tvaridation accuracy:\t{}'.format(epoch+1, acc, test_acc))
+        if (epoch+1) % 10 == 0:
+           tqdm.write('epoch:\t{}\taccuracy:\t{}\tvaridation accuracy:\t{}'.format(epoch+1, acc, test_acc))
     plt.hist(accy_test)
     plt.title("Histogram of prediction accuracies in the test data")
     plt.xlabel("Accuracy")
-    plt.ylabel("Frequency")
-
-"""with sess:
-    # Let the training begin. We load the data in minibatches and update the VI infernce using each new batch.
-    for _ in range(inference.n_iter):
-        perm = np.random.permutation(N) #disorganize the data
-        for i in range(inference.n_iter): # from 0 to N interval is Batch size
-            batch_x = train_x[perm[i:i+batch]]
-            batch_y = train_y2[perm[i:i+batch]]    
-        info_dict = inference.update(feed_dict={x_: batch_x, y_: batch_y, keep_prob: 0.5})
-        inference.print_progress(info_dict)"""
-    
+    plt.ylabel("Frequency") """
 
 
-    
-    
-   """ acc = []
-    test_acc = []
-    
-    y_samples = y.sample(samples_num).eval(feed_dict={x_: test_x, keep_prob: 1})
-    print(y_samples)
-    #print(test_y2)
-    for i in range(samples_num):
-        #y_trn_prd = np.argmax(y_samples[i](axis=0)).astype(np.float32)
-        #print(y_trn_prd)
-        #test_acc_temp = (y_trn_prd == test_y2).mean()
-        #test_acc.append(test_acc_temp)
-        print(y_samples[i])
-    
-    for _ in range(samples_num):
-        y_samples = y.sample(samples_num).eval(feed_dict={x_: train_x, keep_prob: 1})
-        acc = (np.round(y_samples.sum(axis=0) / samples_num) == train_y2).mean()
-        acc.append(acc)
-       # y_samples = y.sample(samples_num).eval(feed_dict={x_: test_x, keep_prob: 1})
-       # test_acc = (np.round(y_samples.sum(axis=0) / samples_num) == test_y2).mean()
-       # test_acc.append(test_acc)
-    print(acc)  """
+
 
