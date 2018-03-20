@@ -2,7 +2,7 @@
 """
 Created on Thu Mar 15 20:52:01 2018
 
-@author: lenovo-
+@author: lenovo-yuhang
 """
 
 import numpy as np # linear algebra
@@ -14,14 +14,14 @@ import edward as ed
 from edward.models import Normal, Categorical
 import matplotlib.pyplot as plt
 
-data = pd.read_csv('mushrooms.csv')
-#data.head(n=5)
+data = pd.read_csv('E:\ICM\semestre III\PRcode\mushroom\Bayesian-Deep-Learning\mushrooms.csv')
+data.head(n=5)
 #data.shape
 #data.isnull().sum()#filter missing data.
 #data.dtypes #view data types
 
 data2 = pd.get_dummies(data)
-#data2.head(n=5)
+data2.head(n=5)
 #data2.shape
 
 data2['class_e'].sum() / data.shape[0] # class rate
@@ -32,10 +32,9 @@ data_y = data2.loc[:, :'class_p'].as_matrix().astype(np.float32)   #two first co
 N = 7000
 train_x, test_x = data_x[:N], data_x[N:]
 train_y, test_y = data_y[:N], data_y[N:]
-
+#train_x
 D = train_x.shape[1]  # nombre of features
 K = train_y.shape[1]  #nombre of class
-
 
 EPOCH_NUM = 100  
 batch = 100  #batch
@@ -69,11 +68,15 @@ inference.initialize(n_iter=1000, n_print=100, scale={y: float(N) / batch})
 sess = tf.Session()
 sess.run(tf.global_variables_initializer())
 
+# summary writer goes in here  
+#train_writer = tf.summary.FileWriter("logs/train",sess.graph)  
+#test_writer = tf.summary.FileWriter("logs/test",sess.graph)  
 
 with sess:   
     samples_num = 100 
-    acc = []
+    accy_train = []
     accy_test = []
+    
     for epoch in tqdm(range(EPOCH_NUM)):
         # Let the training begin. We load the data in minibatches and update the VI infernce using each new batch.
         perm = np.random.permutation(N) #disorganize the data
@@ -82,17 +85,50 @@ with sess:
             batch_y = train_y2[perm[i:i+batch]]    
         info_dict = inference.update(feed_dict={x_: batch_x, y_: batch_y, keep_prob: 0.5})
         inference.print_progress(info_dict)
-            
-    y_samples = y.sample(samples_num).eval(feed_dict={x_: test_x, keep_prob: 1})
+
+
+    y_samples1 = y.sample(samples_num).eval(feed_dict={x_: train_x, keep_prob: 1})
+    y_samples = y.sample(samples_num).eval(feed_dict={x_: test_x, keep_prob: 1})    
+  
+   
     for i in range(samples_num):
         acc = (y_samples[i] == test_y2).mean()*100
+        temp = (y_samples1[i] == train_y2).mean()*100
         accy_test.append(acc)
+        accy_train.append(temp)  
+    
             
     plt.hist(accy_test)
     plt.title("Histogram of prediction accuracies in the test data")
     plt.xlabel("Accuracy")
     plt.ylabel("Frequency")
     
+    test_mushroom = test_x[0:1]
+    test_label = test_y2[0]
+    print('0:edible, 1:poisonous')
+    print('truth = ',test_label)
+    
+    
+    w_samples = []
+    b_samples = []
+    for _ in range(samples_num):
+        w_samp = qw.sample()
+        b_samp = qb.sample()
+        w_samples.append(w_samp)
+        b_samples.append(b_samp)
+    
+    # Now the check what the model perdicts for each (w,b) sample from the posterior. 
+    sing_mushroom_probs = []
+    for w_samp,b_samp in zip(w_samples,b_samples):
+        prob = tf.nn.softmax(tf.matmul( test_x[0:1],w_samp ) + b_samp)
+        sing_mushroom_probs.append(prob.eval())
+    
+    # Create a histogram of these predictions.
+    plt.hist(np.argmax(sing_mushroom_probs,axis=2),bins=range(3))
+    plt.xticks(np.arange(0,3))
+    plt.xlim(0,3)
+    plt.xlabel("Accuracy of the prediction of the test digit")
+    plt.ylabel("Frequency")
 
 """with sess:
     for epoch in tqdm(range(EPOCH_NUM)):
