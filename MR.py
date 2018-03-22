@@ -73,7 +73,7 @@ sess.run(tf.global_variables_initializer())
 #test_writer = tf.summary.FileWriter("logs/test",sess.graph)  
 
 with sess:   
-    samples_num = 100 
+    samples_num = 400 
     accy_train = []
     accy_test = []
     
